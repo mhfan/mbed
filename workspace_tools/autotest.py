@@ -53,8 +53,8 @@ class TestServer:
         
         return False
     
-    def request(self, target, path, duration, test_id):
-        return request_test(target, path, test_id, duration)
+    def request(self, target, path, duration, test_id, stlink):
+        return request_test(target, path, test_id, duration, stlink)
 
 
 def print_results(results, label):
@@ -85,6 +85,8 @@ if __name__ == "__main__":
     clean = test_spec.get('clean', False)
     test_ids = test_spec.get('test_ids', [])
     groups = test_spec.get('test_groups', [])
+    is_stlink = test_spec.get('stlink', False)
+    exclude_ids = test_spec.get("exclude_ids", [])
     for group in groups:
         tests = GROUPS.get(group, [])
         if not tests:
@@ -120,6 +122,8 @@ if __name__ == "__main__":
             for test_id, test in TEST_MAP.iteritems():
                 if test_ids and test_id not in test_ids:
                     continue
+                if test_id in exclude_ids:
+                    continue
                 
                 if test.automated and test.is_supported(target, toolchain):
                     # Check if the server has the capability to serve our test request
@@ -142,7 +146,7 @@ if __name__ == "__main__":
                     else:
                         # For an automated test the duration act as a timeout after
                         # which the test gets interrupted
-                        report = test_server.request(target, path, test.duration, test_id)
+                        report = test_server.request(target, path, test.duration, test_id, is_stlink)
                         test_result['result'] = report['result']
                         store_data(test_result_cache, test_result)
                     

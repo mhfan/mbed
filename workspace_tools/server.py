@@ -23,6 +23,7 @@ from subprocess import Popen, PIPE
 from threading import Thread
 from Queue import Queue, Empty
 import json
+from utils import cmd
 
 
 # Be sure that the tools directory is in the search path
@@ -57,9 +58,11 @@ class ProcessObserver(Thread):
             pass
 
 
-def run_host_test(client, name, disk, port, duration):
+def run_host_test(client, name, disk, port, duration, is_stlink):
     print "{%s}"  % name,
     cmd = ["python", "%s.py" % name, '-p', port, '-d', disk, '-t', str(duration)]
+    if is_stlink:
+        cmd.append('-s')
     proc = Popen(cmd, stdout=PIPE, cwd=HOST_TESTS)
     obs = ProcessObserver(proc)
     start = time()
@@ -129,6 +132,7 @@ class Tester(BaseRequestHandler):
         
         image = data["image"]
         duration = data.get("duration", 10)
+        is_stlink = data.get("stlink", False)
         
         # Find a suitable MUT:
         mut = None
@@ -142,7 +146,7 @@ class Tester(BaseRequestHandler):
             self.send_result("{error}")
             return
         
-        disk = mut['disk']
+        disk = mut.get('disk', "none")
         port = mut['port']
         target = TARGET_MAP[mut['mcu']]
         
@@ -157,8 +161,11 @@ class Tester(BaseRequestHandler):
         
         if not target.is_disk_virtual:
             delete_dir_files(disk)
-        
-        copy(image_path, disk)
+       
+        if not is_stlink:
+            copy(image_path, disk)
+        else:
+            cmd(['st-link_cli.exe', '-c', 'SWD', '-p', image_path, '0x08000000'])
         
         # Copy Extra Files
         if not target.is_disk_virtual and test.extra_files:
@@ -169,7 +176,7 @@ class Tester(BaseRequestHandler):
         
         # Host test
         self.request.setblocking(0)
-        result = run_host_test(self.request, test.host_test, disk, port, duration)
+        result = run_host_test(self.request, test.host_test, disk, port, duration, is_stlink)
         self.send_result(result)
 
 

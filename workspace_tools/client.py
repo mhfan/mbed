@@ -33,7 +33,7 @@ def get_muts():
     return json.loads(muts)
 
 
-def request_test(mcu, image_path, test_id, duration=10):
+def request_test(mcu, image_path, test_id, duration=10, stlink=False):
     """
     The test_id needs to be provided only for an automated test the server will
     load the correspondent Checker class and will return a json report at the
@@ -44,6 +44,7 @@ def request_test(mcu, image_path, test_id, duration=10):
         "image": image_path,
         "duration": duration,
         "test_id": test_id,
+        "stlink": stlink
     }
     
     sock = get_server_connection()

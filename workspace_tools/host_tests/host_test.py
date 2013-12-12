@@ -18,7 +18,7 @@ from optparse import OptionParser
 from serial import Serial
 from time import sleep
 from sys import stdout
-
+from os import system
 
 class Mbed:
     """
@@ -38,6 +38,9 @@ class Mbed:
         
         parser.add_option("-t", "--timeout", dest="timeout",
                       help="Timeout", metavar="TIMEOUT")
+
+        parser.add_option("-s", "--stlink", dest="stlink", action="store_true", default="False",
+                      help="Use stlink", metavar="STLINK")
         
         (self.options, _) = parser.parse_args()
         
@@ -47,6 +50,7 @@ class Mbed:
         self.port = self.options.port
         self.disk = self.options.disk
         self.serial = None
+        self.stlink = self.options.stlink
         self.timeout = 10 if self.options.timeout is None else self.options.timeout
         
         print 'Mbed: "%s" "%s"' % (self.port, self.disk)
@@ -57,9 +61,12 @@ class Mbed:
         self.flush()
     
     def reset(self):
-        self.serial.sendBreak()
-        # Give time to wait for the image loading
-        sleep(2)
+        if not self.stlink:
+            self.serial.sendBreak()
+            # Give time to wait for the image loading
+            sleep(2)
+        else:
+            system('st-link_cli.exe -c SWD -Rst')
     
     def flush(self):
         self.serial.flushInput()

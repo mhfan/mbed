@@ -32,7 +32,7 @@ from workspace_tools.build_api import build_project
 from workspace_tools.tests import TESTS, Test, TEST_MAP
 from workspace_tools.paths import BUILD_DIR, RTOS_LIBRARIES
 from workspace_tools.targets import TARGET_MAP
-from workspace_tools.utils import args_error
+from workspace_tools.utils import args_error, cmd
 try:
     import workspace_tools.private_settings as ps
 except:
@@ -74,6 +74,8 @@ if __name__ == '__main__':
                       default=None, help="The mbed serial port")
     parser.add_option("-b", "--baud", type="int", dest="baud",
                       default=None, help="The mbed serial baud rate")
+    parser.add_option("--stlink", action="store_true", dest="stlink",
+                      default=False, help="STLink")
     
     # Ideally, all the tests with a single "main" thread can be run with, or
     # without the rtos
@@ -164,6 +166,8 @@ if __name__ == '__main__':
         if options.disk:
             # Simple copy to the mbed disk
             copy(bin, options.disk)
+        elif options.stlink:
+            cmd(['st-link_cli.exe', '-c', 'SWD', '-p', bin, '0x08000000'])
         
         if options.serial:
             # Import pyserial: https://pypi.python.org/pypi/pyserial
@@ -175,7 +179,10 @@ if __name__ == '__main__':
                 serial.setBaudrate(options.baud)
             serial.flushInput()
             serial.flushOutput()
-            serial.sendBreak()
+            if not options.stlink:
+                serial.sendBreak()
+            else:
+                cmd(['st-link_cli.exe', '-c', 'SWD', '-Rst'])
             
             while True:
                 c = serial.read(512)

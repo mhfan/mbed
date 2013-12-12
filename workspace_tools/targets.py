@@ -254,12 +254,16 @@ class NUCLEO_F103RB(Target):
         Target.__init__(self)
         
         self.core = "Cortex-M3"
+
+        self.is_disk_virtual = True
         
         self.extra_labels = ['STM', 'STM32F10X', 'STM32F103RB']
         
         self.supported_toolchains = ["ARM", "uARM", "GCC_ARM"]
-        
-        
+
+    def program_cycle_s(self):
+        return 0
+
 class MBED_MCU(Target):
     def __init__(self):
         Target.__init__(self)
