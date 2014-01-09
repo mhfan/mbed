@@ -28,7 +28,7 @@ from utils import cmd
 
 # Be sure that the tools directory is in the search path
 ROOT = abspath(join(dirname(__file__), ".."))
-sys.path.append(ROOT)
+sys.path.insert(0, ROOT)
 
 from workspace_tools.utils import delete_dir_files
 from workspace_tools.settings import * 
@@ -58,9 +58,9 @@ class ProcessObserver(Thread):
             pass
 
 
-def run_host_test(client, name, disk, port, duration, is_stlink):
+def run_host_test(client, name, disk, port, duration, extra_serial, is_stlink):
     print "{%s}"  % name,
-    cmd = ["python", "%s.py" % name, '-p', port, '-d', disk, '-t', str(duration)]
+    cmd = ["python", "%s.py" % name, '-p', port, '-d', disk, '-t', str(duration), "-e", extra_serial]
     if is_stlink:
         cmd.append('-s')
     proc = Popen(cmd, stdout=PIPE, cwd=HOST_TESTS)
@@ -148,6 +148,7 @@ class Tester(BaseRequestHandler):
         
         disk = mut.get('disk', "none")
         port = mut['port']
+        extra_serial = mut.get('extra_serial', "")
         target = TARGET_MAP[mut['mcu']]
         
         # Program
@@ -176,7 +177,7 @@ class Tester(BaseRequestHandler):
         
         # Host test
         self.request.setblocking(0)
-        result = run_host_test(self.request, test.host_test, disk, port, duration, is_stlink)
+        result = run_host_test(self.request, test.host_test, disk, port, duration, extra_serial, is_stlink)
         self.send_result(result)
 
 

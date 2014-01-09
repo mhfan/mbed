@@ -1,17 +1,31 @@
 /* mbed Microcontroller Library
- * Copyright (c) 2006-2013 ARM Limited
+ *******************************************************************************
+ * Copyright (c) 2014, STMicroelectronics
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of STMicroelectronics nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************
  */
 #include "i2c_api.h"
 
@@ -27,20 +41,13 @@
 #define FLAG_TIMEOUT ((int)0x1000)
 #define LONG_TIMEOUT ((int)0x8000)
 
-// Functions exit codes
-#define EXIT_OK      (0)
-#define EXIT_FAIL    (1)
-#define EXIT_TIMEOUT (0xFFFFFFFF)
-
 static const PinMap PinMap_I2C_SDA[] = {
-    //{PB_7,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 0)}, // Cannot be used due to TIM4
-    {PB_9,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 7)}, // GPIO_Remap_I2C1
+    {PB_9,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 8)}, // GPIO_Remap_I2C1
     {NC,    NC,    0}
 };
 
 static const PinMap PinMap_I2C_SCL[] = {
-    //{PB_6,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 0)}, // // Cannot be used due to TIM4
-    {PB_8,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 7)}, // GPIO_Remap_I2C1
+    {PB_8,  I2C_1, STM_PIN_DATA(GPIO_Mode_AF_OD, 8)}, // GPIO_Remap_I2C1
     {NC,    NC,    0}
 };
 
@@ -107,17 +114,19 @@ inline int i2c_start(i2c_t *obj) {
     //while (I2C_CheckEvent(i2c, I2C_EVENT_MASTER_MODE_SELECT) == ERROR) {
     while (I2C_GetFlagStatus(i2c, I2C_FLAG_SB) == RESET) {
       if ((timeout--) == 0) {
-          return EXIT_TIMEOUT;
+          return 1;
       }
     }
     
-    return EXIT_OK;
+    return 0;
 }
 
 inline int i2c_stop(i2c_t *obj) {
     I2C_TypeDef *i2c = (I2C_TypeDef *)(obj->i2c);
+  
     I2C_GenerateSTOP(i2c, ENABLE);
-    return EXIT_OK;
+  
+    return 0;
 }
 
 int i2c_read(i2c_t *obj, int address, char *data, int length, int stop) {
@@ -133,7 +142,7 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop) {
     timeout = LONG_TIMEOUT;
     while (I2C_GetFlagStatus(i2c, I2C_FLAG_BUSY) == SET) {
         if ((timeout--) == 0) {
-            return EXIT_TIMEOUT;
+            return 0;
         }
     }
 */
@@ -147,7 +156,7 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop) {
     timeout = FLAG_TIMEOUT;
     while (I2C_CheckEvent(i2c, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) == ERROR) {
       if ((timeout--) == 0) {
-          return EXIT_TIMEOUT;
+          return 0;
       }
     }
     
@@ -180,7 +189,7 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop) {
     timeout = LONG_TIMEOUT;
     while (I2C_GetFlagStatus(i2c, I2C_FLAG_BUSY) == SET) {
         if ((timeout--) == 0) {
-            return EXIT_TIMEOUT;
+            return 0;
         }
     }
 */
@@ -194,13 +203,14 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop) {
     timeout = FLAG_TIMEOUT;
     while (I2C_CheckEvent(i2c, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) == ERROR) {
       if ((timeout--) == 0) {
-          return EXIT_TIMEOUT;
+          return 0;
       }
     }
 
     for (count = 0; count < length; count++) {
-        if (i2c_byte_write(obj, data[count]) != EXIT_OK) {
-            return EXIT_FAIL;
+        if (i2c_byte_write(obj, data[count]) != 1) {
+            i2c_stop(obj);
+            return 0;
         }
     }
 
@@ -229,7 +239,7 @@ int i2c_byte_read(i2c_t *obj, int last) {
     timeout = FLAG_TIMEOUT;
     while (I2C_GetFlagStatus(i2c, I2C_FLAG_RXNE) == RESET) {
       if ((timeout--) == 0) {
-          return EXIT_TIMEOUT;
+          return 0;
       }
     }
 
@@ -250,11 +260,11 @@ int i2c_byte_write(i2c_t *obj, int data) {
     while ((I2C_GetFlagStatus(i2c, I2C_FLAG_TXE) == RESET) &&
            (I2C_GetFlagStatus(i2c, I2C_FLAG_BTF) == RESET)) {
         if ((timeout--) == 0) {
-            return EXIT_TIMEOUT;
+            return 0;
         }
     }
     
-    return EXIT_OK;
+    return 1;
 }
 
 void i2c_reset(i2c_t *obj) {
@@ -288,29 +298,37 @@ void i2c_slave_mode(i2c_t *obj, int enable_slave) {
     // Nothing to do
 }
 
-#define        NoData         0
-#define        ReadAddressed  1
-#define        WriteGeneral   2
-#define        WriteAddressed 3
+// See I2CSlave.h
+#define NoData         0 // the slave has not been addressed
+#define ReadAddressed  1 // the master has requested a read from this slave (slave = transmitter)
+#define WriteGeneral   2 // the master is writing to all slave
+#define WriteAddressed 3 // the master is writing to this slave (slave = receiver)
 
 int i2c_slave_receive(i2c_t *obj) {
-    //I2C_TypeDef *i2c = (I2C_TypeDef *)(obj->i2c);
-    int retval = NoData;
-    //int status;
-  
-    //if (I2C_GetFlagStatus(i2c, I2C_FLAG_GENCALL) == SET) retval = WriteGeneral;
-    
-    //status = I2C_GetLastEvent(i2c);
-  
-    return(retval);
+    // TO BE DONE
+    return(0);
 }
 
 int i2c_slave_read(i2c_t *obj, char *data, int length) {
-    return 0;
+    int count = 0;
+ 
+    // Read all bytes
+    for (count = 0; count < length; count++) {
+        data[count] = i2c_byte_read(obj, 0);
+    }
+    
+    return count;
 }
 
 int i2c_slave_write(i2c_t *obj, const char *data, int length) {
-    return 0;
+    int count = 0;
+ 
+    // Write all bytes
+    for (count = 0; count < length; count++) {
+        i2c_byte_write(obj, data[count]);
+    }
+    
+    return count;
 }
 
 

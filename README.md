@@ -1,5 +1,5 @@
-mbed SDK
-========
+mbed SDK 
+======== 
 
 [![Build Status](https://travis-ci.org/mbedmicro/mbed.png)](https://travis-ci.org/mbedmicro/mbed/builds)
 
@@ -35,8 +35,9 @@ NXP:
 * LPC11C24 (Cortex-M0)
 
 Freescale:
-* [KL25Z](http://mbed.org/platforms/KL25Z/) (Cortex-M0+)
 * KL05Z (Cortex-M0+)
+* [KL25Z](http://mbed.org/platforms/KL25Z/) (Cortex-M0+)
+* [KL46Z](https://mbed.org/platforms/FRDM-KL46Z/) (Cortex-M0+)
 
 STMicroelectronics:
 * STM32F407 (Cortex-M4)

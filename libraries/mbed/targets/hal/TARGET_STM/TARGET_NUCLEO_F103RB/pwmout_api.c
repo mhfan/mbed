@@ -1,17 +1,31 @@
 /* mbed Microcontroller Library
- * Copyright (c) 2006-2013 ARM Limited
+ *******************************************************************************
+ * Copyright (c) 2014, STMicroelectronics
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of STMicroelectronics nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************
  */
 #include "pwmout_api.h"
 
@@ -21,18 +35,19 @@
 
 // Only TIM2 and TIM3 can be used (TIM1 and TIM4 are used by the us_ticker)
 static const PinMap PinMap_PWM[] = {
-    // TIM2
-    {PA_2,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM2_CH3 - ARDUINO D1 (extra)
-    {PA_3,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM2_CH4 - ARDUINO D0 (extra)
-    // TIM2 remap
-    {PB_3,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 5)}, // TIM2r_CH2 - ARDUINO D3
-    {PB_10, PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 5)}, // TIM2r_CH3 - ARDUINO D6
-    // TIM3
-    {PA_6,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM3_CH1 - ARDUINO D12 (extra)
-    {PA_7,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM3_CH2 - ARDUINO D11
-    // TIM3 remap
-    {PB_4,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 6)}, // TIM3r_CH1 - ARDUINO D5
-    {PC_7,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 6)}, // TIM3r_CH2 - ARDUINO D9
+    // TIM2 default
+    //{PA_2,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM2_CH3 - ARDUINO D1
+    //{PA_3,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM2_CH4 - ARDUINO D0
+    // TIM2 full remap
+    {PB_3,  PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 5)}, // TIM2fr_CH2 - ARDUINO D3
+    //{PB_10, PWM_2, STM_PIN_DATA(GPIO_Mode_AF_PP, 5)}, // TIM2fr_CH3 - ARDUINO D6
+    // TIM3 default
+    //{PA_6,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM3_CH1 - ARDUINO D12
+    //{PA_7,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 0)}, // TIM3_CH2 - ARDUINO D11
+    // TIM3 full remap
+    //{PC_7,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 6)}, // TIM3fr_CH2 - ARDUINO D9
+    // TIM3 partial remap
+    {PB_4,  PWM_3, STM_PIN_DATA(GPIO_Mode_AF_PP, 7)}, // TIM3pr_CH1 - ARDUINO D5
     {NC,    NC,    0}
 };
 
@@ -83,29 +98,29 @@ void pwmout_write(pwmout_t* obj, float value) {
     TIM_OCInitStructure.TIM_Pulse = obj->pulse;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
-    // TIM Channel 1
-    if ((obj->pin == PA_6) || (obj->pin == PB_4)) {
+    // Configure channel 1
+    if (obj->pin == PB_4) {
         TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable);
         TIM_OC1Init(tim, &TIM_OCInitStructure);
     }
 
-    // TIM Channel 2    
-    if ((obj->pin == PA_7) || (obj->pin == PB_3) || (obj->pin == PC_7)) {
+    // Configure channel 2
+    if (obj->pin == PB_3) {
         TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
         TIM_OC2Init(tim, &TIM_OCInitStructure);
     }
 
-    // TIM Channel 3    
-    if ((obj->pin == PA_2) || (obj->pin == PB_10)) {
-        TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
-        TIM_OC3Init(tim, &TIM_OCInitStructure);
-    }
+    // Configure channel 3
+    //if (obj->pin == PB_10) {
+    //    TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
+    //    TIM_OC3Init(tim, &TIM_OCInitStructure);
+    //}
 
-    // TIM Channel 4
-    if (obj->pin == PA_3) {
-        TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
-        TIM_OC4Init(tim, &TIM_OCInitStructure);
-    }
+    // Configure channel 4
+    //if (obj->pin == PA_3) {
+    //    TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
+    //    TIM_OC4Init(tim, &TIM_OCInitStructure);
+    //}
 }
 
 float pwmout_read(pwmout_t* obj) {
